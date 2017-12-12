@@ -1,4 +1,5 @@
 import chainer
+import chainer.functions as F
 import chainer.links as L
 from chainer import training
 from chainer.training import extensions
@@ -6,17 +7,19 @@ from chainer.training import extensions
 from chainer.datasets import get_cifar10
 
 from vlad_pooling import VLADpooling
+from attention_vlad_pooling import AttentionVLADpooling
 
 
 class Net(chainer.Chain):
     def __init__(self, n_class):
         super(Net, self).__init__()
         with self.init_scope():
-            self.vlad = VLADpooling(3, 64)
-            self.fc   = L.Linear(64 * 3, n_class)
+            self.vlad  = VLADpooling(3, 64)
+            self.avlad = AttentionVLADpooling(3, 64)
+            self.fc    = L.Linear(64 * 3 * 2, n_class)
 
     def __call__(self, x):
-        return self.fc(self.vlad(x))
+        return self.fc(F.concat((self.vlad(x), self.avlad(x)), axis=1))
 
 
 def main():
